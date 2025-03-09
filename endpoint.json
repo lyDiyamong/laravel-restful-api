@@ -1,0 +1,40 @@
+{
+    "info": {
+      "name": "API Routes",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Buyers",
+        "item": [
+          { "name": "Get Buyers", "request": { "method": "GET", "url": { "raw": "{{base_url}}/buyers", "host": ["{{base_url}}"], "path": ["buyers"] } } },
+          { "name": "Get Buyer", "request": { "method": "GET", "url": { "raw": "{{base_url}}/buyers/:buyer", "host": ["{{base_url}}"], "path": ["buyers", ":buyer"] } } },
+          { "name": "Get Buyer Categories", "request": { "method": "GET", "url": { "raw": "{{base_url}}/buyers/:buyer/categories", "host": ["{{base_url}}"], "path": ["buyers", ":buyer", "categories"] } } }
+        ]
+      },
+      {
+        "name": "Categories",
+        "item": [
+          { "name": "Create Category", "request": { "method": "POST", "url": { "raw": "{{base_url}}/categories", "host": ["{{base_url}}"], "path": ["categories"] } } },
+          { "name": "Get Categories", "request": { "method": "GET", "url": { "raw": "{{base_url}}/categories", "host": ["{{base_url}}"], "path": ["categories"] } } },
+          { "name": "Update Category", "request": { "method": "PUT", "url": { "raw": "{{base_url}}/categories/:category", "host": ["{{base_url}}"], "path": ["categories", ":category"] } } },
+          { "name": "Delete Category", "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/categories/:category", "host": ["{{base_url}}"], "path": ["categories", ":category"] } } }
+        ]
+      },
+      {
+        "name": "Products",
+        "item": [
+          { "name": "Get Products", "request": { "method": "GET", "url": { "raw": "{{base_url}}/products", "host": ["{{base_url}}"], "path": ["products"] } } },
+          { "name": "Get Product", "request": { "method": "GET", "url": { "raw": "{{base_url}}/products/:product", "host": ["{{base_url}}"], "path": ["products", ":product"] } } }
+        ]
+      },
+      {
+        "name": "Users",
+        "item": [
+          { "name": "Create User", "request": { "method": "POST", "url": { "raw": "{{base_url}}/users", "host": ["{{base_url}}"], "path": ["users"] } } },
+          { "name": "Get Users", "request": { "method": "GET", "url": { "raw": "{{base_url}}/users", "host": ["{{base_url}}"], "path": ["users"] } } }
+        ]
+      }
+    ]
+  }
+  
