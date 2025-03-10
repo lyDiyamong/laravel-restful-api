@@ -17,8 +17,13 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->integer('quantity');
-            $table->foreignUuid('buyer_id')->constrained("buyers", "buyer_id")->onDelete('cascade');
-            $table->foreignUuid('product_id')->constrained("products", "product_id")->onDelete('cascade');
+            // Foreign Key
+            $table->foreignUuid('buyer_id');
+            $table->foreignUuid('product_id');
+
+            // Reference
+            $table->foreign('buyer_id')->references("user_id")->on('users')->onDelete('cascade');
+            $table->foreign('product_id')->references("product_id")->on('products')->onDelete('cascade');
             $table->timestamps();
 });
 

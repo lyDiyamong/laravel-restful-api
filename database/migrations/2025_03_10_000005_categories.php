@@ -13,10 +13,10 @@ return new class extends Migration
     {
         //
         Schema::create('categories', function (Blueprint $table) {
-            $table->id();
+            $table->uuid("category_id")->primary();
             $table->string('name');
             $table->text('description');
-            $table->foreignUuid('product_id')->constrained("products", "product_id")->onDelete('cascade');
+            // $table->foreignUuid('product_id')->constrained("products", "product_id")->onDelete('cascade');
             $table->timestamps();
         });
     }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Client\Request;
@@ -17,9 +18,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->boolean('verified');
+            $table->boolean('verified')->default(User::UNVERIFIED_USER);
             $table->string('verification_token')->nullable();
-            $table->boolean('admin');
+            $table->boolean('admin')->default(User::REGULAR_USER);
             $table->timestamps();
         });
 
