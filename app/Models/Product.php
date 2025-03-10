@@ -2,11 +2,29 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 class Product extends Model
 {
     use HasFactory;
+
+    protected $primaryKey = 'product_id';
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            if (empty($user->user_id)) {
+                $user->user_id = (string) Str::uuid();
+            }
+        });
+    }
 
     const AVAILABLE_PRODUCT = 'available';
     const UNAVAILABLE_PRODUCT = 'unavailable';
