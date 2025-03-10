@@ -5,7 +5,6 @@ namespace Database\Factories;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 class ProductFactory extends Factory
 {
@@ -20,7 +19,7 @@ class ProductFactory extends Factory
             'quantity' => $this->faker->numberBetween(1, 100),
             'image' => $this->faker->imageUrl(640, 480, 'products', true),
             'status' => Product::AVAILABLE_PRODUCT, // or random between AVAILABLE/UNAVAILABLE
-            'seller_id' => User::factory(), // assumes seller is a User with user_id
+            'seller_id' => User::all()->random()->user_id, // assumes seller is a User with user_id
         ];
     }
 }

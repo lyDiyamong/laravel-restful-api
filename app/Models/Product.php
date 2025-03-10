@@ -19,9 +19,9 @@ class Product extends Model
     {
         parent::boot();
 
-        static::creating(function ($user) {
-            if (empty($user->user_id)) {
-                $user->user_id = (string) Str::uuid();
+        static::creating(function ($product) {
+            if (empty($product->product_id)) {
+                $product->product_id = (string) Str::uuid();
             }
         });
     }
