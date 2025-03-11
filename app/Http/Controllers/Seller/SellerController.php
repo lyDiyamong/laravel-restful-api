@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class SellerController extends Controller
@@ -13,6 +15,9 @@ class SellerController extends Controller
     public function index()
     {
         //
+        $seller_ids = Product::select('seller_id')->distinct()->get()->pluck('seller_id');
+        $sellers = User::whereIn('user_id', $seller_ids)->get();
+        return response()->json(['data' => $sellers], 200);
     }
 
     /**
@@ -37,6 +42,12 @@ class SellerController extends Controller
     public function show(string $id)
     {
         //
+        $seller_id = Product::where('seller_id', $id)->first()->seller_id;
+        $sellers = User::where('user_id', $seller_id)->first();
+        if (!$sellers) {
+            return response()->json(['message' => 'Seller not found'], 404);
+        }
+        return response()->json(['data' => $sellers], 200);
     }
 
     /**
