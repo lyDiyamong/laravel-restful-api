@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Buyer;
 
+use App\Http\Controllers\ApiController;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
 
-class BuyerController extends Controller
+class BuyerController extends ApiController
 {
     /**
      * Display a listing of the resource.
@@ -18,7 +19,7 @@ class BuyerController extends Controller
         //
         $buyer_ids = Transaction::select('buyer_id')->distinct()->get()->pluck('buyer_id');
         $buyers = User::whereIn('user_id', $buyer_ids)->get();
-        return response()->json(['data' => $buyers], 200);
+        return $this->showAll($buyers, 200);
     }
 
     /**
@@ -44,11 +45,11 @@ class BuyerController extends Controller
     {
         //
         $buyer_id = Transaction::where('buyer_id', $id)->first()->buyer_id;
-        $buyers = User::where('user_id', $id)->first();
+        $buyers = User::where('user_id', $buyer_id)->first();
         if (!$buyers) {
-            return response()->json(['message' => 'Buyer not found'], 404);
+            return $this->errorResponse('The buyer with the specified ID does not exist', 404);
         }
-        return response()->json(['data' => $buyers], 200);
+        return $this->showOne($buyers, 200);
     }
 
     /**

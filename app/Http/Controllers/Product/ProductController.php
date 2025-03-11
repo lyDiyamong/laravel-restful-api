@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Product;
 
+use App\Http\Controllers\ApiController;
 use App\Models\Product;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
-class ProductController extends Controller
+class ProductController extends ApiController
 {
 
     
@@ -18,7 +19,7 @@ class ProductController extends Controller
     {
         //
         $products = Product::all();
-        return response()->json(['data' => $products], 200);
+        return $this->showAll($products, 'Products retrieved successfully', 200);
     }
 
     /**
@@ -27,7 +28,7 @@ class ProductController extends Controller
     public function create()
     {
         //
-        return response()->json(['message' => 'Product created successfully'], 201);
+        return $this->showMessage('Product created successfully', 201);
     }
 
     /**
@@ -38,7 +39,7 @@ class ProductController extends Controller
         //
         // dump( $request->all());
         $product = Product::create($request->all());
-        return response()->json($product, 201);
+        return $this->showOne($product, 'Product created successfully', 201);
     }
 
     /**
@@ -49,9 +50,9 @@ class ProductController extends Controller
         //
         $product = Product::find($id);
         if (!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
+            return $this->errorResponse('Product not found', 404);
         }
-        return response()->json($product, 200);
+        return $this->showOne($product, 'Product retrieved successfully', 200);
     }
 
     /**
@@ -78,7 +79,7 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
         $product->update($request->all());
-        return response()->json($product, 200);
+        return $this->showOne($product, 'Product updated successfully', 200);
     }
 
     /**
@@ -89,9 +90,9 @@ class ProductController extends Controller
         //
         $product = Product::find($id);
         if (!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
+            return $this->errorResponse('Product not found', 404);
         }
         $product->delete();
-        return response()->json(['message' => 'Product deleted successfully'], 200);
+        return $this->showOne($product, 'Product deleted successfully', 200);
     }
 }
