@@ -19,7 +19,7 @@ trait ApiResponder
     /**
      * Return an error JSON response
      */
-    protected function errorResponse(string $message, int $code): JsonResponse
+    protected function errorResponse(string | array $message, int $code): JsonResponse
     {
         return response()->json(['error' => $message, 'code' => $code], $code);
     }

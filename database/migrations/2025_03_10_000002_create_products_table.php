@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->char("status", 20)->default(Product::UNAVAILABLE_PRODUCT);
             $table->timestamps();
+            $table->softDeletes();
             // Foreign key constraint
             $table->foreignUuid('seller_id');
             // Reference

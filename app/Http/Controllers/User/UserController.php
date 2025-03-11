@@ -61,12 +61,12 @@ class UserController extends ApiController
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(User $id)
     {
         //
         $user = User::find($id);
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return $this->errorResponse('User not found', 404);
         }
         return $this->showOne($user, 200);
     }
@@ -82,9 +82,8 @@ class UserController extends ApiController
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, User $user)
     {
-        $user = User::findOrFail($id);
 
         $rule = [
             'email' => 'email|unique:users,email,' . $user->id,
@@ -133,10 +132,13 @@ class UserController extends ApiController
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(User $id)
     {
         //
-        $user = User::findOrFail($id);
+        $user = User::find($id);
+        if (!$user) {
+            return $this->errorResponse('User not found', 404);
+        }
         $user->delete();
         return $this->showOne($user, 204);
     }

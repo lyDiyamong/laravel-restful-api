@@ -19,7 +19,7 @@ class ProductController extends ApiController
     {
         //
         $products = Product::all();
-        return $this->showAll($products, 'Products retrieved successfully', 200);
+        return $this->showAll($products, 200);
     }
 
     /**
@@ -39,7 +39,7 @@ class ProductController extends ApiController
         //
         // dump( $request->all());
         $product = Product::create($request->all());
-        return $this->showOne($product, 'Product created successfully', 201);
+        return $this->showOne($product, 201);
     }
 
     /**
@@ -52,7 +52,7 @@ class ProductController extends ApiController
         if (!$product) {
             return $this->errorResponse('Product not found', 404);
         }
-        return $this->showOne($product, 'Product retrieved successfully', 200);
+        return $this->showOne($product, 200);
     }
 
     /**
@@ -79,7 +79,7 @@ class ProductController extends ApiController
             return response()->json(['message' => 'Product not found'], 404);
         }
         $product->update($request->all());
-        return $this->showOne($product, 'Product updated successfully', 200);
+        return $this->showOne($product, 200);
     }
 
     /**
@@ -93,6 +93,6 @@ class ProductController extends ApiController
             return $this->errorResponse('Product not found', 404);
         }
         $product->delete();
-        return $this->showOne($product, 'Product deleted successfully', 200);
+        return $this->showOne($product, 200);
     }
 }

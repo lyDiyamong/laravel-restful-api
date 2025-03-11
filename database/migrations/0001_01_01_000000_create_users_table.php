@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('verification_token')->nullable();
             $table->boolean('admin')->default(User::REGULAR_USER);
             $table->timestamps();
+            $table->softDeletes();
         });
 
     }
