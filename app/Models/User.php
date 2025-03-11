@@ -40,16 +40,6 @@ class User extends Authenticatable
      */
     protected $fillable = ['name', 'email', 'password', 'verified', 'verification_token', 'admin'];
 
-    public function buyer()
-    {
-        return $this->hasOne(Buyer::class);
-    }
-
-    public function seller()
-    {
-        return $this->hasOne(Seller::class);
-    }
-
     /**
      * The attributes that should be hidden for serialization.
      *
