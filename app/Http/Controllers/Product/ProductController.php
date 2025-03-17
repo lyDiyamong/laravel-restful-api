@@ -54,13 +54,13 @@ class ProductController extends ApiController
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Product $product)
     {
         //
-        $product = Product::find($id);
-        if (!$product) {
-            return $this->errorResponse('Product not found', 404);
-        }
+        // $product = Product::find($id);
+        // if (!$product) {
+        //     return $this->errorResponse('Product not found', 404);
+        // }
         return $this->showOne($product, 200);
     }
 

@@ -51,6 +51,12 @@ class Product extends Model
 
     public function categories()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsToMany(
+            Category::class,
+            'product_category',     // pivot table name
+            'product_id',           // foreign key on pivot pointing to Product
+            'category_id'           // foreign key on pivot pointing to Category
+        );
     }
+
 }
