@@ -41,7 +41,7 @@ class Product extends Model
 
     public function seller() 
     {
-        return $this->belongsTo(Seller::class);
+        return $this->belongsTo(Seller::class, "seller_id", "user_id");
     }
 
     public function transactions()
