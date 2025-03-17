@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Transaction;
 
 use App\Http\Controllers\ApiController;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class TransactionController extends ApiController
 {
@@ -13,6 +15,8 @@ class TransactionController extends ApiController
     public function index()
     {
         //
+        $transactions = Transaction::all();
+        return $this->showAll($transactions);
     }
 
     /**
@@ -29,6 +33,23 @@ class TransactionController extends ApiController
     public function store(Request $request)
     {
         //
+        $rules = [
+            'quantity' => 'required|integer|min:1',
+            'product_id' => 'required|exists:products,id',
+        ];
+        $data = $request->all();
+
+        $validator = Validator::make($data, $rules);
+
+        if ($validator->fails()) {
+            return $this->errorResponse("Input invalid", 400);
+        }
+
+        $data['buyer_id'] = $request->buyer_id;
+        $transactions = Transaction::create($data);
+
+        return $this->showOne($transactions, 201);
+        
     }
 
     /**
@@ -37,6 +58,15 @@ class TransactionController extends ApiController
     public function show(string $id)
     {
         //
+
+        $transactions= Transaction::find($id);
+
+        if (!$transactions) {
+            return $this->errorResponse($transactions, 404);
+
+       }
+
+       return $this->showOne($transactions, 200);
     }
 
     /**
@@ -61,5 +91,14 @@ class TransactionController extends ApiController
     public function destroy(string $id)
     {
         //
+        $transactions = Transaction::find($id);
+
+        if (!$transactions) {
+            return $this->errorResponse("Not found", 404);
+
+        }
+        $transactions->delete();
+
+        return $this->showMessage("Delete success");
     }
 }

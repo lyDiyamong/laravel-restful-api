@@ -37,6 +37,15 @@ class ProductController extends ApiController
     public function store(Request $request)
     {
         //
+
+        $rule = [
+            'name' => 'required|max:100',
+            'description' => 'max:255',
+            'price' => 'numeric|required',
+            'quantity' => 'numeric|required',
+            
+
+        ];
         // dump( $request->all());
         $product = Product::create($request->all());
         return $this->showOne($product, 201);
