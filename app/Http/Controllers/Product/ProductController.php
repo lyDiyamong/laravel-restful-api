@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Services\S3FileService;
 
 class ProductController extends ApiController
 {
@@ -34,23 +35,31 @@ class ProductController extends ApiController
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, S3FileService $s3)
     {
         //
 
-        $rule = [
+        $rules = [
             'name' => 'required|max:100',
             'description' => 'max:255',
             'price' => 'numeric|required',
             'quantity' => 'numeric|required',
+            'image' => 'required|image'
             
 
         ];
+        $this->validate($request, $rules);
+
+        $data = $request->all();
+
+        
+
+        $url = $s3->upload($request->file('image'));
+        $data['image'] = $url;
         // dump( $request->all());
-        $product = Product::create($request->all());
+        $product = Product::create($data);
         return $this->showOne($product, 201);
     }
-
     /**
      * Display the specified resource.
      */
