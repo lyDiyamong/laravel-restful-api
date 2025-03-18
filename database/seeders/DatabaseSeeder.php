@@ -23,9 +23,16 @@ class DatabaseSeeder extends Seeder
         // DB::statement('SET FOREIGN_KEY_CHECKS = 0');
 
         User::factory()->count(10)->create();
-        Product::factory()->count(20)->create();
-        Category::factory()->count(10)->create();
+        $products = Product::factory()->count(20)->create();
+        $categories = Category::factory()->count(20)->create();
         Transaction::factory()->count(20)->create();
 
+
+        $products->each(function ($product) use ($categories) {
+            // Attach 1–3 random category to each user
+            $product->categories()->attach(
+                $categories->random(rand(1, 3))->pluck('category_id')->toArray()
+            );
+        }); 
     }
 }

@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\ApiController;
+use App\Http\Controllers\Controller;
 use App\Models\Buyer;
 use Illuminate\Http\Request;
 
-class BuyerSellerController extends ApiController
+class BuyerCategoryController extends ApiController
 {
     /**
      * Display a listing of the resource.
@@ -14,15 +15,14 @@ class BuyerSellerController extends ApiController
     public function index(Buyer $buyer)
     {
         //
-
-        $seller = $buyer->transactions()->with('product.seller')
+        $categories = $buyer->transactions()->with("product.categories")
         ->get()
-        // if we want only seller of the buyer
-        ->pluck('product.seller')
-        ->unique("user_id")
+        ->pluck("product.categories")
+        ->collapse()
+        ->unique("category_id")
         ->values();
 
-        return $this->showAll($seller, 200);
+        return $this->showAll($categories, 200);
     }
 
     
