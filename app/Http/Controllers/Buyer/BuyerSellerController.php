@@ -15,7 +15,10 @@ class BuyerSellerController extends ApiController
     {
         //
 
-        $seller = $buyer->transactions()->with('product.seller')->get();
+        $seller = $buyer->transactions()->with('product.seller')
+        ->get()
+        // if we want only seller of the buyer
+        ->pluck('product.seller');
 
         return $this->showAll($seller, 200);
     }
