@@ -11,7 +11,7 @@ Route::resource('users', UserController::class , ['except' => ['create', 'edit']
 
 Route::prefix('users')->group(function () {
     Route::post('/verify', [UserController::class, 'verifyOtp']);
-    Route::get('/resend-otp', [UserController::class, 'resendOtp'])
+    Route::get('/resend-otp/{email}', [UserController::class, 'resendOtp'])
         // 5 attempts per minute;
     ->middleware('throttle:5,1');
 });

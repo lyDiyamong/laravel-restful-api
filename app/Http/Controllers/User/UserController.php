@@ -3,13 +3,21 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\ApiController;
+use App\Mail\UserCreated;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends ApiController
 {
+
+    public function __construct()
+    {
+    }
     /**
      * Display a listing of the resource.
      */
@@ -156,7 +164,7 @@ class UserController extends ApiController
                     ->where('token_expires', '>', now())
                     ->first();
         if (!$user) {
-            return response()->json(['message' => 'Invalid or expired OTP'], 400);
+            return $this->errorResponse( 'Invalid or expired OTP', 400);
         }
         
         // Mark user as verified
@@ -165,27 +173,26 @@ class UserController extends ApiController
         $user->verified = User::VERIFIED_USER;
         $user->save();
 
-        return response()->json(['message' => 'Email verified successfully']);
+        return $this->showMessage('Email verified successfully', 200);
     }
 
-    public function resendOtp(Request $request) {
-        $rule = [
-            "email" => "required|email"
-        ];
+    public function resendOtp(string $email) {
 
-        $user = User::where("email", $request->email)->first();
+
+        $user = User::where("email", $email)->first();
 
         if (!$user) {
             return $this->errorResponse("User not found", 404);
         }
 
-        $otp = mt_rand(100000, 999999);
-        
-        // Store the OTP and expiration in the user record
-        $user->verification_token = $otp;
-        $user->token_expires = now()->addMinutes(10); // Expires in 10 minutes
+        try {
+            Mail::to($user->email)->send(new UserCreated($user));
+            Log::info("Mail resent successfully to: {$user->email}");
+        } catch (Exception $e) {
+            Log::error("Failed to resend mail to {$user->email}: " . $e->getMessage());
+        }
 
-        $user->save();
+
 
         return $this->showMessage("Please check your message again to claim a new verification code", 200);
 
