@@ -10,6 +10,13 @@ class S3FileService
 {
     protected string $disk = 's3';
 
+    private function sliceOldPath(string $path): string
+    {
+        $newPath =explode(".com/" , $path)[1];
+
+        return $newPath;
+    }
+
     /**
      * Upload a file to a specific directory in S3
      */
@@ -25,7 +32,7 @@ class S3FileService
 
         $originalNameSlice =explode(".", $file->getClientOriginalName())[0];
 
-        $filename = $filename ?? $originalNameSlice . uniqid() . '.' . $file->getClientOriginalExtension();
+        $filename = $filename ?? $originalNameSlice .  "-" . uniqid() . '.' . $file->getClientOriginalExtension();
         $directory = trim($directory, '/');
         $path = $file->storeAs($directory, $filename, $this->disk);
 
@@ -42,7 +49,8 @@ class S3FileService
      */
     public function delete(string $path): bool
     {
-        return Storage::disk($this->disk)->delete($path);
+        $newPath = $this->sliceOldPath($path);
+        return Storage::disk($this->disk)->delete($newPath);
     }
 
     /**
@@ -51,6 +59,8 @@ class S3FileService
     public function update(UploadedFile $file, string $oldPath, string $directory = '', ?string $filename = null): string
     {
         $this->delete($oldPath);
+
+        dump($file);
         return $this->upload($file, $directory, $filename);
     }
 }

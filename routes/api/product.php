@@ -14,7 +14,7 @@ use App\Http\Controllers\Product\ProductTransactionController;
 //     Route::delete('/{id}', [ProductController::class, 'destroy']);
 // });
 
-Route::resource("/products", ProductController::class);
+Route::resource("/products", ProductController::class, ['only' => ['index', 'store', 'update', 'destroy', 'show']]);
 Route::resource("/products.transactions", ProductTransactionController::class, ['only' => ['index']]);
 Route::resource("/products.buyers", ProductBuyerController::class, ['only' => ['index']]);
 Route::resource("/products.categories", ProductCategoryController::class, ['only' => ['index', 'update', 'destroy']]);

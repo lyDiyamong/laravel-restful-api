@@ -44,18 +44,26 @@ class ProductController extends ApiController
             'description' => 'max:255',
             'price' => 'numeric|required',
             'quantity' => 'numeric|required',
-            'image' => 'required|image'
+            'image' => 'sometimes|image'
             
 
         ];
         $this->validate($request, $rules);
 
+
+
         $data = $request->all();
+
+        if ($request->hasFile('image')) {
+            // dump($request->files('image'));
+            $url = $s3->upload($request->file('image'), 'products');
+            $data['image'] = $url;
+        }
 
         
 
-        $url = $s3->upload($request->file('image'));
-        $data['image'] = $url;
+        // $url = $s3->upload($request->file('image'), 'products');
+        // $data['image'] = $url;
         // dump( $request->all());
         $product = Product::create($data);
         return $this->showOne($product, 201);
@@ -89,27 +97,49 @@ class ProductController extends ApiController
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id, S3FileService $s3)
     {
-        //
         $product = Product::find($id);
         if (!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
+            return $this->errorResponse('Product not found', 404);
         }
-        $product->update($request->all());
+    
+        // Validation rules (optional image)
+        $rules = [
+            'name' => 'sometimes|max:100',
+            'description' => 'sometimes|max:255',
+            'price' => 'sometimes|numeric',
+            'quantity' => 'sometimes|numeric',
+            'image' => 'sometimes|image' // 'sometimes' makes it optional
+        ];
+        $request->validate($rules);
+
+    
+        $data = $request->all();
+        $oldImage = $product->image;
+    
+        // Only update the image if a new file is provided
+        if ($request->hasFile('image')) {
+            $url = $s3->update($request->file('image'), $oldImage, 'products');
+            $data['image'] = $url;
+        }
+    
+        $product->update($data);
         return $this->showOne($product, 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $id, S3FileService $s3)
     {
         //
         $product = Product::find($id);
+
         if (!$product) {
             return $this->errorResponse('Product not found', 404);
         }
+        $s3->delete($product->image);
         $product->delete();
         return $this->showOne($product, 200);
     }
