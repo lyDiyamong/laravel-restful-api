@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\ApiController;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends ApiController
@@ -49,7 +50,8 @@ class UserController extends ApiController
         $data = $request->all();
         $data['password'] = bcrypt($request->password);
         $data['verified'] = User::UNVERIFIED_USER;
-        $data['verification_token'] = User::generateVerificationCode();
+        // $data['verification_token'] = User::generateVerificationCode();
+        // $data['token_expires'] = Date::now()->addMinutes(10);
         $data['admin'] = User::REGULAR_USER;
 
         $user = User::create($data);
@@ -64,7 +66,7 @@ class UserController extends ApiController
     public function show(User $id)
     {
         //
-        $user = User::find($id);
+        $user = User::find($id)->first();
         if (!$user) {
             return $this->errorResponse('User not found', 404);
         }
@@ -135,11 +137,61 @@ class UserController extends ApiController
     public function destroy(User $id)
     {
         //
-        $user = User::find($id);
+        $user = User::find($id)->first();
         if (!$user) {
             return $this->errorResponse('User not found', 404);
         }
         $user->delete();
         return $this->showOne($user, 204);
+    }
+
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            // 'email' => 'required|email|exists:users,email',
+            'otp' => 'required|string',
+        ]);
+
+        $user = User::where('verification_token', $request->otp)
+                    ->where('token_expires', '>', now())
+                    ->first();
+        if (!$user) {
+            return response()->json(['message' => 'Invalid or expired OTP'], 400);
+        }
+        
+        // Mark user as verified
+        $user->verification_token = null;
+        $user->token_expires = null;
+        $user->verified = User::VERIFIED_USER;
+        $user->save();
+
+        return response()->json(['message' => 'Email verified successfully']);
+    }
+
+    public function resendOtp(Request $request) {
+        $rule = [
+            "email" => "required|email"
+        ];
+
+        $user = User::where("email", $request->email)->first();
+
+        if (!$user) {
+            return $this->errorResponse("User not found", 404);
+        }
+
+        $otp = mt_rand(100000, 999999);
+        
+        // Store the OTP and expiration in the user record
+        $user->verification_token = $otp;
+        $user->token_expires = now()->addMinutes(10); // Expires in 10 minutes
+
+        $user->save();
+
+        return $this->showMessage("Please check your message again to claim a new verification code", 200);
+
+
+
+
+
     }
 }
