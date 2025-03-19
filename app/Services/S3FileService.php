@@ -17,13 +17,15 @@ class S3FileService
     {
         // Log the S3 configuration from config/filesystems.php
         $s3Config = config("filesystems.disks.{$this->disk}");
-        Log::info('S3 Disk Configuration', $s3Config);
+        // Log::info('S3 Disk Configuration', $s3Config);
 
         if (!$file->isValid()) {
             throw new \Exception('Invalid file upload.');
         }
 
-        $filename = $filename ?? uniqid() . '.' . $file->getClientOriginalExtension();
+        $originalNameSlice =explode(".", $file->getClientOriginalName())[0];
+
+        $filename = $filename ?? $originalNameSlice . uniqid() . '.' . $file->getClientOriginalExtension();
         $directory = trim($directory, '/');
         $path = $file->storeAs($directory, $filename, $this->disk);
 
@@ -35,7 +37,7 @@ class S3FileService
     }
 
 
-    /**
+    /** 
      * Delete a file from S3 by its path
      */
     public function delete(string $path): bool
