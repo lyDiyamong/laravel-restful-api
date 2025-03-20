@@ -142,15 +142,10 @@ class UserController extends ApiController
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $id)
+    public function destroy(User $user)
     {
-        //
-        $user = User::find($id)->first();
-        if (!$user) {
-            return $this->errorResponse('User not found', 404);
-        }
         $user->delete();
-        return $this->showOne($user, 204);
+        return $this->showMessage("User has been deleted successfully", 200);
     }
 
     public function verifyOtp(Request $request)

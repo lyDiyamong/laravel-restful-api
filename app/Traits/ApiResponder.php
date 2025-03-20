@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Http\JsonResponse;
 use \Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 use League\Fractal\TransformerAbstract;
 
@@ -37,9 +38,15 @@ trait ApiResponder
         }
         
         $transformer = $collection->first()->transformer;
+        // Filter data
         $collection = $this->filterData($collection, $transformer);
+        // Sort data
         $collection = $this->sortData($collection, $transformer);
+        // Paginate
         $collection = $this->paginate($collection);
+        // Cache data
+        $collection = $this->cacheData($collection);
+
         if ($transformer) {
             
             $collection = $this->transformData($collection, $transformer);
@@ -124,6 +131,17 @@ trait ApiResponder
                 'query' => request()->query(),        // Keeps other query strings like ?sort_by=name
             ]
         );
+    }
+
+    private function cacheData($data) 
+    {
+        $url = request()->url();
+        // Cache::put('test_key', 'hello world', 10);
+        // dd(Cache::get('test_key')); // Should print "hello world"
+
+        return Cache::remember($url, 30, function () use ($data) {
+            return $data;
+        });
     }
 
     private function transformData($data, $transformer)
