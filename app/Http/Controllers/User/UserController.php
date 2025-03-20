@@ -186,8 +186,11 @@ class UserController extends ApiController
         }
 
         try {
-            Mail::to($user->email)->send(new UserCreated($user));
-            Log::info("Mail resent successfully to: {$user->email}");
+            retry(5, function () use ($user)
+            {
+                Mail::to($user->email)->send(new UserCreated($user));
+                Log::info("Mail resent successfully to: {$user->email}");
+            }, 100);
         } catch (Exception $e) {
             Log::error("Failed to resend mail to {$user->email}: " . $e->getMessage());
         }
