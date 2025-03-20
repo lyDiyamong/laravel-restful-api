@@ -7,42 +7,45 @@ use League\Fractal\TransformerAbstract;
 
 class UserTransformer extends TransformerAbstract
 {
+    protected array $defaultIncludes = [];
+    protected array $availableIncludes = [];
+
     /**
-     * List of resources to automatically include
-     *
-     * @var array
+     * Transform the user model data
      */
-    protected array $defaultIncludes = [
-        //
-    ];
-    
-    /**
-     * List of resources possible to include
-     *
-     * @var array
-     */
-    protected array $availableIncludes = [
-        //
-    ];
-    
-    /**
-     * A Fractal transformer.
-     *
-     * @return array
-     */
-    public function transform(User $user)
+    public function transform(User $user): array
     {
         $nameParts = explode(" ", $user->name);
         $firstName = $nameParts[0] ?? '';
-        $lastName = $nameParts[1] ?? ''; // Will be empty string if not provided
-    
+        $lastName = $nameParts[1] ?? '';
+
         return [
-            "user_identifier" => (string)$user->user_id,
-            "first_name" => (string)$firstName,
-            "last_name" => (string)$lastName,
-            "user_email" => (string)$user->email,
-            "isVerified" => (int)$user->verified,
+            "user_identifier" => (string) $user->user_id,
+            "first_name" => $firstName,
+            "last_name" => $lastName,
+            "user_email" => (string) $user->email,
+            "isVerified" => (int) $user->verified,
             "creation_date" => $user->created_at,
+            "is_admin" => (string)$user->admin
         ];
+    }
+
+    /**
+     * Maps transformed attribute names to original model fields
+     * For sorting, filtering, etc.
+     */
+    public static function originalAttribute(string $index): ?string
+    {
+        $attributes = [
+            "user_identifier" => "user_id",
+            "first_name" => "name",      // we split 'name' for display
+            "last_name" => "name",       // same
+            "user_email" => "email",
+            "isVerified" => "verified",
+            "creation_date" => "created_at",
+            "is_admin" => "admin"
+        ];
+
+        return $attributes[$index] ?? null;
     }
 }

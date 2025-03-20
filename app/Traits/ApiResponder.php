@@ -5,6 +5,9 @@ namespace App\Traits;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Http\JsonResponse;
+use \Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Validator;
+use League\Fractal\TransformerAbstract;
 
 trait ApiResponder
 {
@@ -32,12 +35,16 @@ trait ApiResponder
         if ($collection->isEmpty()){
             return $this->successResponse(['data' => [], 'message' => "Success"], $code);
         }
-
+        
         $transformer = $collection->first()->transformer;
+        $collection = $this->filterData($collection, $transformer);
+        $collection = $this->sortData($collection, $transformer);
+        $collection = $this->paginate($collection);
         if ($transformer) {
-
+            
             $collection = $this->transformData($collection, $transformer);
         }
+
 
         return $this->successResponse(['data' => $collection, 'message' => "Success"], $code);
     }
@@ -62,6 +69,61 @@ trait ApiResponder
     protected function showMessage(string $message, int $code = 200): JsonResponse
     {
         return $this->successResponse(['message' => $message], $code);
+    }
+
+    protected function sortData (Collection $collection, $transformer)
+    {
+        if (request()->has('sort_by'))
+        {
+            $attribute = $transformer::originalAttribute(request()->sort_by);
+            $collection = $collection->sortBy->{$attribute};
+        }
+
+        return $collection;
+    }
+
+    private function filterData(Collection $collection, $transformer)
+    {
+        foreach(request()->query() as $key => $value)
+        {
+            $attribute = $transformer::originalAttribute($key);
+
+            if (isset($attribute, $value)) {
+                $collection = $collection->where ($attribute, $value);
+            }
+        }
+
+        return $collection;
+    }
+
+    private function paginate(Collection $collection, int $perPage = 15): LengthAwarePaginator
+    {
+
+        $rules = [
+            'limit'=> "integer|min:2|max:50"
+        ];
+        if (request()->has("limit"))
+        {
+            $perPage = (int)request()->limit;
+        }
+
+        Validator::validate(request()->all(), $rules);
+        $page = LengthAwarePaginator::resolveCurrentPage(); // Get current page from request (?page=)
+        $total = $collection->count();                      // Total items
+        $results = $collection->forPage($page, $perPage);   // Get items for current page
+
+       
+        
+        return new LengthAwarePaginator(
+            $results->values(), // Reindex the items
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => request()->url(),           // Keeps the current URL
+                'query' => request()->query(),        // Keeps other query strings like ?sort_by=name
+            ]
+        );
     }
 
     private function transformData($data, $transformer)
