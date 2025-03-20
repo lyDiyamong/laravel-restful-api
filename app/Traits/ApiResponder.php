@@ -29,6 +29,16 @@ trait ApiResponder
      */
     protected function showAll(Collection $collection, int $code = 200): JsonResponse
     {
+        if ($collection->isEmpty()){
+            return $this->successResponse(['data' => [], 'message' => "Success"], $code);
+        }
+
+        $transformer = $collection->first()->transformer;
+        if ($transformer) {
+
+            $collection = $this->transformData($collection, $transformer);
+        }
+
         return $this->successResponse(['data' => $collection, 'message' => "Success"], $code);
     }
 
@@ -37,6 +47,12 @@ trait ApiResponder
      */
     protected function showOne(Model $model, int $code = 200): JsonResponse
     {
+
+        $transformer = $model->transformer;
+        if ($transformer) {
+
+            $model = $this->transformData($model, new $transformer);
+        }
         return $this->successResponse(['data' => $model, 'message' => "Success"], $code);
     }
 
@@ -46,5 +62,13 @@ trait ApiResponder
     protected function showMessage(string $message, int $code = 200): JsonResponse
     {
         return $this->successResponse(['message' => $message], $code);
+    }
+
+    private function transformData($data, $transformer)
+    {
+        $transformation = fractal($data, new $transformer);
+
+        return $transformation->toArray();
+
     }
 } 

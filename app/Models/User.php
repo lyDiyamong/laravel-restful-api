@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Transformers\UserTransformer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -16,11 +18,13 @@ class User extends Authenticatable
     public $incrementing = false;
     protected $keyType = 'string';
 
-    const VERIFIED_USER = '1';
-    const UNVERIFIED_USER = '0';
+    public $transformer = UserTransformer::class;
 
-    const ADMIN_USER = 'true';
-    const REGULAR_USER = 'false';
+    public const VERIFIED_USER = '1';
+    public const UNVERIFIED_USER = '0';
+
+    public const ADMIN_USER = 'true';
+    public const REGULAR_USER = 'false';
 
     protected static function boot()
     {

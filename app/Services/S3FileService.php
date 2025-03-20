@@ -34,7 +34,7 @@ class S3FileService
 
         $filename = $filename ?? $originalNameSlice .  "-" . uniqid() . '.' . $file->getClientOriginalExtension();
         $directory = trim($directory, '/');
-        $path = $file->storeAs($directory, $filename, $this->disk);
+        $path = $file->store($directory, $this->disk);
 
         if (!$path) {
             throw new \Exception('File upload failed or returned an empty path.');
@@ -60,7 +60,6 @@ class S3FileService
     {
         $this->delete($oldPath);
 
-        dump($file);
         return $this->upload($file, $directory, $filename);
     }
 }
