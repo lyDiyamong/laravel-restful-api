@@ -149,9 +149,7 @@ trait ApiResponder
 
     private function cacheData($data) 
     {
-        $url = request()->url();
-        // Cache::put('test_key', 'hello world', 10);
-        // dd(Cache::get('test_key')); // Should print "hello world"
+        $url = request()->fullUrl();
 
         return Cache::remember($url, 10, function () use ($data) {
             return $data;

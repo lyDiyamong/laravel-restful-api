@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\User\UserController;
 use App\Http\Middleware\IsAdmin;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
 Route::resource('users', UserController::class , ['except' => ['create', 'edit']]);
@@ -18,3 +20,12 @@ Route::prefix('users')->group(function () {
     ->middleware('throttle:5,1');
 });
 
+
+Route::get('/test-redis', function () {
+    dump(Redis::connection()->ping());
+    // Cache::put('test_key', 'hello from redis', 60); 
+    dump(config('cache.default'));
+
+    // dd(Cache::get('test_key')); // Should print "hello world"
+    return Cache::get('test_key');
+});
