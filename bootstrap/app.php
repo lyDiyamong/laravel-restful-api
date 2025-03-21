@@ -34,6 +34,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // 'throttle:2,1'
 
         ]);
+        $middleware->web([
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
