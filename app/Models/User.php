@@ -26,6 +26,12 @@ class User extends Authenticatable
     public const ADMIN_USER = 'true';
     public const REGULAR_USER = 'false';
 
+    // public function __construct()
+    // {
+    //     parent::__construct();
+    //     $this->middleware("transform.input:". UserTransformer::class)->only(["store", "update"]);
+    // }
+
     protected static function boot()
     {
         parent::boot();

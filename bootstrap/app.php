@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\SignatureMiddleware;
+use App\Http\Middleware\TransformInputMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,7 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'is_admin' => IsAdmin::class,
-            'signature' => SignatureMiddleware::class
+            'signature' => SignatureMiddleware::class,
+            'transform.input' => TransformInputMiddleware::class,
         ]);
         $middleware->use([
             ValidatePostSize::class,
