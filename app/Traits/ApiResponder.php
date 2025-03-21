@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use \Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
+use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use League\Fractal\TransformerAbstract;
 
 trait ApiResponder
@@ -49,11 +50,15 @@ trait ApiResponder
 
         if ($transformer) {
             
-            $collection = $this->transformData($collection, $transformer);
+           $collection = $this->transformData($collection, $transformer);
         }
 
 
-        return $this->successResponse(['data' => $collection, 'message' => "Success"], $code);
+        return $this->successResponse([
+            'data' => $collection['data'] ?? $collection,
+            'pagination' => $collection['pagination'] ?? null,
+            'message' => 'Success'
+        ], $code);
     }
 
     /**
@@ -90,18 +95,27 @@ trait ApiResponder
     }
 
     private function filterData(Collection $collection, $transformer)
-    {
-        foreach(request()->query() as $key => $value)
-        {
-            $attribute = $transformer::originalAttribute($key);
+{
+    $excludedKeys = ['sort_by', 'limit', 'page'];
 
-            if (isset($attribute, $value)) {
-                $collection = $collection->where ($attribute, $value);
-            }
+    foreach(request()->query() as $key => $value)
+    {
+        if (in_array($key, $excludedKeys)) continue;
+
+        $attribute = $key;
+
+        if ($transformer){
+            $attribute = $transformer::originalAttribute($key);
         }
 
-        return $collection;
+        if (isset($attribute, $value)) {
+            $collection = $collection->where($attribute, $value);
+        }
     }
+
+    return $collection;
+}
+
 
     private function paginate(Collection $collection, int $perPage = 15): LengthAwarePaginator
     {
@@ -139,16 +153,30 @@ trait ApiResponder
         // Cache::put('test_key', 'hello world', 10);
         // dd(Cache::get('test_key')); // Should print "hello world"
 
-        return Cache::remember($url, 30, function () use ($data) {
+        return Cache::remember($url, 10, function () use ($data) {
             return $data;
         });
     }
 
     private function transformData($data, $transformer)
-    {
-        $transformation = fractal($data, new $transformer);
+{
+    $transformation = fractal($data, new $transformer)->toArray();
 
-        return $transformation->toArray();
-
+    if ($data instanceof LengthAwarePaginator) {
+        return [
+            'data' => $transformation['data'],
+            'pagination' => [
+                'current_page' => $data->currentPage(),
+                'last_page' => $data->lastPage(),
+                'per_page' => $data->perPage(),
+                'total' => $data->total(),
+            ]
+        ];
     }
+
+    return $transformation;
+}
+
+
+    
 } 
