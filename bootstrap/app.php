@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\Cors;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\SignatureMiddleware;
 use App\Http\Middleware\TransformInputMiddleware;
@@ -9,7 +11,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Foundation\Http\Middleware\ValidatePostSize;
-
+use Illuminate\Auth\Middleware\Authenticate;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -22,20 +24,24 @@ return Application::configure(basePath: dirname(__DIR__))
             'is_admin' => IsAdmin::class,
             'signature' => SignatureMiddleware::class,
             'transform.input' => TransformInputMiddleware::class,
+            // "auth" => Authenticate::class, 
+            'cors' =>  Cors::class,
         ]);
         $middleware->use([
             ValidatePostSize::class,
             TrimStrings::class,
-            ConvertEmptyStringsToNull::class
+            ConvertEmptyStringsToNull::class,
+            Cors::class,
         ]);
         $middleware->api([
-            IsAdmin::class,
+            // IsAdmin::class,
+            "cors",
             'signature:X-Mong-Application',
             // 'throttle:2,1'
 
         ]);
         $middleware->web([
-            \App\Http\Middleware\HandleInertiaRequests::class,
+            HandleInertiaRequests::class,
         ]);
         //
     })
