@@ -66,4 +66,9 @@ class AuthController extends ApiController
             return $this->errorResponse('Unauthorised.', 401);
         } 
     }
+
+    public function me()
+    {
+        
+    }
 }
