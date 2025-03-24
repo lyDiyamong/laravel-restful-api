@@ -11,6 +11,7 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Log;
+use Laravel\Passport\Passport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
+
+        Passport::loadKeysFrom(storage_path('oauth'));
+        Passport::tokensExpireIn(now()->addHours(1));
+        Passport::refreshTokensExpireIn(now()->addDays(30));
+
 
         User::created(function (User $user) {
             try {

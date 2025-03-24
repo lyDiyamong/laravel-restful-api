@@ -1,17 +1,26 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\User\UserController;
 use App\Http\Middleware\IsAdmin;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 
-Route::resource('users', UserController::class , ['except' => ['create', 'edit']]);
     // ->middleware(IsAdmin::class);
 
 // Route::name('verify')
 //     ->post('users/verify/', [UserController::class, 'verifyOtp']);
  
+Route::middleware('auth:api')->group(function () {
+
+    Route::resource('users', UserController::class , ['except' => ['create', 'edit']]);
+
+});
+
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+
 
 Route::prefix('users')->group(function () {
     Route::post('/verify', [UserController::class, 'verifyOtp']);
@@ -23,7 +32,7 @@ Route::prefix('users')->group(function () {
 
 Route::get('/test-redis', function () {
     dump(Redis::connection()->ping());
-    // Cache::put('test_key', 'hello from redis', 60); 
+    Cache::put('test_key', 'hello from redis', 60); 
     dump(config('cache.default'));
 
     // dd(Cache::get('test_key')); // Should print "hello world"
