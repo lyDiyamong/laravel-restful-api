@@ -21,6 +21,7 @@ Route::resource('users', UserController::class , ['only' => ['index']]);
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::get('/refresh', [AuthController::class, 'refreshToken'])->name('refresh');
 
 
 Route::prefix('users')->group(function () {

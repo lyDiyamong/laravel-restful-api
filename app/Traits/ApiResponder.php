@@ -70,7 +70,7 @@ trait ApiResponder
         $transformer = $model->transformer;
         if ($transformer) {
 
-            $model = $this->transformData($model, new $transformer);
+            $model = $this->transformData($model, new $transformer)['data'];
         }
         return $this->successResponse(['data' => $model, 'message' => "Success"], $code);
     }

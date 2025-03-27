@@ -10,6 +10,7 @@ use Laravel\Passport\Client as OClient;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use App\Libraries\IssueToken;
 
 class AuthController extends ApiController
 {
@@ -45,105 +46,102 @@ class AuthController extends ApiController
         // $data['token_expires'] = Date::now()->addMinutes(10);
         $data['admin'] = User::REGULAR_USER;
 
-        $user = User::create($data);
+        User::create($data);
 
-        $token = $user->createToken('AuthToken')->accessToken;
+        // For API authentication, we'll use Passport
+        $res = IssueToken::scope('*')
+            ->usePasswordGrantType()
+            ->issueToken($request);
 
         return $this->successResponse([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user
+            'token' => $res->json,
+            'message' => 'User registered successfully'
         ], 201);
 
 
     }
-
-        // LOGIN
-    // public function login(Request $request)
-    // {
-    //     if(Auth::attempt(['email' => $request->email, 'password' => $request->password])){ 
-    //         $user = Auth::user(); 
-    //         $success['token'] =  $user->createToken('MyApp')-> accessToken; 
-    //         $success['name'] =  $user->name;
-    
-    //         return $this->successResponse([
-    //             'access_token' => $success['token'],
-    //             'token_type' => 'Bearer',
-    //             'user' => $user
-    //         ], 200);
-    //     } 
-    //     else{ 
-    //         return $this->errorResponse('Unauthorised.', 401);
-    //     } 
-    // }
     public function login(Request $request)
-    {
-        $credentials = $request->only('email', 'password');
+{
+    $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            $oClient = OClient::where('password_client', 1)->first();
+    if (Auth::attempt($credentials)) {
+        $res = IssueToken::scope('*')
+            ->usePasswordGrantType()
+            ->issueToken($request);
 
-            $http = new Client();
-
-            Logger(url('/oauth/token'));
-
-
-            // $response = $http->post(url('/oauth/token'), [
-            //     'form_params' => [
-            //         'grant_type' => 'password',
-            //         'client_id' => $oClient->id,
-            //         'client_secret' => $oClient->secret,
-            //         'username' => $request->email,
-            //         'password' => $request->password,
-            //         'scope' => '',
-            //     ]
-            // ]);
-            $params = [
-                'grant_type' => 'password',
-                'client_id' => $oClient->id,
-                'client_secret' => $oClient->secret,
-                'username' => $request->email,
-                'password' => $request->password,
-                'scope' => '*',
-            ];
-            // dd($oClient);
-            $request->request->add($params);
-            $request->headers->set("Accept", "application/json");
-            $request->headers->set("Content-Type", "application/json");
-
-
-            $res = Request::create('/oauth/token', 'POST', $params);
-
-            $res = Route::dispatch($res);
-
-            // dd($res->getContent());
-
-
-           return $this->successResponse([
-            "json" => json_decode((string) $res->getContent(), true)
-           ]);
+        if (!$res->success) {
+            return $this->errorResponse(
+                $res->json['message'] ?? 'Authentication failed',
+                400
+            );
         }
 
-        return response()->json(['error' => 'Unauthorized'], 401);
+        // Creating a Laravel response object
+        $response = $this->successResponse([
+            'data' => $res->json
+        ]);
+
+        // Add refresh token to HTTP-only cookie if it exists
+        if (isset($res->json['refresh_token'])) {
+            return $response->cookie(
+                'refresh_token', 
+                $res->json['refresh_token'], 
+                60 * 24 * 30, // Expires in 30 days
+                '/', // Path
+                null, // Domain (null = default)
+                false, // Secure (set to true in production with HTTPS)
+                true // HTTP-only (prevents JavaScript access)
+            );
+        }
+
+        return $response;
     }
+
+    return $this->errorResponse("Incorrect password or email", 403);
+}
+
 
     public function refreshToken(Request $request)
     {
-        $oClient = OClient::where('password_client', 1)->first();
+        $refreshToken = $request->cookie('refresh_token');
 
-        $http = new Client();
-        $response = $http->post(url('/oauth/token'), [
-            'form_params' => [
-                'grant_type' => 'refresh_token',
-                'refresh_token' => $request->refresh_token,
-                'client_id' => $oClient->id,
-                'client_secret' => $oClient->secret,
-                'scope' => '',
-            ]
+        if (!$refreshToken) {
+            return $this->errorResponse("Refresh token not found", 400);
+        }
+
+        // Create a modified request with the refresh token
+        $request->merge(['refresh_token' => $refreshToken]);
+
+        $res = IssueToken::scope('*')
+            ->useRefreshTokenGrantType()
+            ->issueToken($request);
+
+        if (!$res->success) {
+            return $this->errorResponse(
+                $res->json['message'] ?? 'The refresh token is invalid.',
+                400
+            );
+        }
+
+        // Create response with new tokens
+        $response = $this->successResponse([
+            'token' => $res->json
         ]);
 
-        return json_decode((string) $response->getBody(), true);
+        // Set a new refresh token cookie if one is returned
+        if (isset($res->json['refresh_token'])) {
+            $response->cookie(
+                'refresh_token', 
+                $res->json['refresh_token'], 
+                60 * 24 * 30, // Expires in 30 days
+                '/', // Path
+                null, // Domain (null = default)
+                false, // Secure (set to true in production with HTTPS)
+                true // HTTP-only (prevents JavaScript access)
+            );
+        }
+
+        return $response;
     }
 
     public function me()

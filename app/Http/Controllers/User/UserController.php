@@ -71,13 +71,8 @@ class UserController extends ApiController
     /**
      * Display the specified resource.
      */
-    public function show(User $id)
+    public function show(User $user)
     {
-        //
-        $user = User::find($id)->first();
-        if (!$user) {
-            return $this->errorResponse('User not found', 404);
-        }
         return $this->showOne($user, 200);
     }
 

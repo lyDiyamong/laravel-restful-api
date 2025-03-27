@@ -40,11 +40,6 @@ class AppServiceProvider extends ServiceProvider
         Passport::tokensExpireIn(now()->addMinutes(2));
         Passport::refreshTokensExpireIn(now()->addDays(30));
         Passport::enablePasswordGrant();
-        // Passport::useTokenModel(Token::class);
-        // Passport::useRefreshTokenModel(RefreshToken::class);
-        // Passport::useAuthCodeModel(AuthCode::class);
-        // Passport::useClientModel(Client::class);
-        // Passport::usePersonalAccessClientModel(PersonalAccessClient::class);
 
         Passport::tokensCan([
             'read-user' => 'Read user profile',
