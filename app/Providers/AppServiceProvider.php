@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Log;
 use Laravel\Passport\Passport;
+// use App\Models\Passport\AuthCode;
+// use App\Models\Passport\Client;
+// use App\Models\Passport\PersonalAccessClient;
+// use App\Models\Passport\RefreshToken;
+// use App\Models\Passport\Token;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,10 +35,25 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
-
+        Passport::ignoreRoutes();
         Passport::loadKeysFrom(storage_path('oauth'));
-        Passport::tokensExpireIn(now()->addHours(1));
+        Passport::tokensExpireIn(now()->addMinutes(2));
         Passport::refreshTokensExpireIn(now()->addDays(30));
+        Passport::enablePasswordGrant();
+        // Passport::useTokenModel(Token::class);
+        // Passport::useRefreshTokenModel(RefreshToken::class);
+        // Passport::useAuthCodeModel(AuthCode::class);
+        // Passport::useClientModel(Client::class);
+        // Passport::usePersonalAccessClientModel(PersonalAccessClient::class);
+
+        Passport::tokensCan([
+            'read-user' => 'Read user profile',
+            'write-user' => 'Modify user profile',
+        ]);
+    
+        Passport::setDefaultScope([
+            'read-user'
+        ]);
 
 
         User::created(function (User $user) {

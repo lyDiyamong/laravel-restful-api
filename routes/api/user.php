@@ -14,9 +14,10 @@ use Illuminate\Support\Facades\Route;
  
 Route::middleware('auth:api')->group(function () {
 
-    Route::resource('users', UserController::class , ['except' => ['create', 'edit']]);
+    Route::resource('users', UserController::class , ['except' => ['create', 'edit', 'index']]);
 
 });
+Route::resource('users', UserController::class , ['only' => ['index']]);
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
