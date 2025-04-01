@@ -1,11 +1,13 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\User\UserController;
 use App\Http\Middleware\IsAdmin;
+use App\Jobs\SendWelcomeEmailJob;
+use App\Listeners\SendWelcomeEmail;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\User\UserController;
 
     // ->middleware(IsAdmin::class);
 
@@ -15,8 +17,19 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:api')->group(function () {
 
     Route::resource('users', UserController::class , ['except' => ['create', 'edit', 'index']]);
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/test-queue', function () {
+
+        $user = auth()->user(); // Get the authenticated user
+
+        SendWelcomeEmailJob::dispatch($user);
+
+        return "Job dispatched!";
+    });
 
 });
+
+
 Route::resource('users', UserController::class , ['only' => ['index']]);
 
 Route::post('/register', [AuthController::class, 'register']);

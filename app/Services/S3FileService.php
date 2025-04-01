@@ -2,19 +2,16 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+
 class S3FileService
 {
     protected string $disk = 's3';
 
     private function sliceOldPath(string $path): string
     {
-        $newPath =explode(".com/" , $path)[1];
-
-        return $newPath;
+        return parse_url($path, PHP_URL_PATH); // Returns "/products/filename.png"
     }
 
     /**
@@ -30,7 +27,7 @@ class S3FileService
             throw new \Exception('Invalid file upload.');
         }
 
-        $originalNameSlice =explode(".", $file->getClientOriginalName())[0];
+        $originalNameSlice = explode(".", $file->getClientOriginalName())[0];
 
         $filename = $filename ?? $originalNameSlice .  "-" . uniqid() . '.' . $file->getClientOriginalExtension();
         $directory = trim($directory, '/');
@@ -50,6 +47,11 @@ class S3FileService
     public function delete(string $path): bool
     {
         $newPath = $this->sliceOldPath($path);
+
+        // if (!Storage::disk($this->disk)->exists($newPath)) {
+        //     throw new \Exception("File does not exist at: {$newPath}");
+        // }
+
         return Storage::disk($this->disk)->delete($newPath);
     }
 
@@ -63,4 +65,3 @@ class S3FileService
         return $this->upload($file, $directory, $filename);
     }
 }
-

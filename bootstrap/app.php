@@ -1,17 +1,17 @@
 <?php
 
 use App\Http\Middleware\Cors;
-use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\IsAdmin;
-use App\Http\Middleware\SignatureMiddleware;
-use App\Http\Middleware\TransformInputMiddleware;
 use Illuminate\Foundation\Application;
+use App\Http\Middleware\SignatureMiddleware;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\TransformInputMiddleware;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Foundation\Http\Middleware\ValidatePostSize;
-use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -37,13 +37,13 @@ return Application::configure(basePath: dirname(__DIR__))
             // IsAdmin::class,
             "cors",
             'signature:X-Mong-Application',
-            // 'throttle:2,1'
+            'throttle:100,1'
 
         ]);
         $middleware->web([
             HandleInertiaRequests::class,
         ]);
-        //
+        // 
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

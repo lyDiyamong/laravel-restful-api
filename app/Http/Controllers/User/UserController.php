@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Http\Controllers\ApiController;
-use App\Mail\UserCreated;
-use App\Models\User;
 use Exception;
+use App\Models\User;
+use App\Mail\UserCreated;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\ApiController;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends ApiController
@@ -143,55 +143,50 @@ class UserController extends ApiController
         return $this->showMessage("User has been deleted successfully", 200);
     }
 
-    public function verifyOtp(Request $request)
-    {
-        $request->validate([
-            // 'email' => 'required|email|exists:users,email',
-            'otp' => 'required|string',
-        ]);
+    // public function verifyOtp(Request $request)
+    // {
+    //     $request->validate([
+    //         // 'email' => 'required|email|exists:users,email',
+    //         'otp' => 'required|string',
+    //     ]);
 
-        $user = User::where('verification_token', $request->otp)
-                    ->where('token_expires', '>', now())
-                    ->first();
-        if (!$user) {
-            return $this->errorResponse( 'Invalid or expired OTP', 400);
-        }
+    //     $user = User::where('verification_token', $request->otp)
+    //                 ->where('token_expires', '>', now())
+    //                 ->first();
+    //     if (!$user) {
+    //         return $this->errorResponse( 'Invalid or expired OTP', 400);
+    //     }
         
-        // Mark user as verified
-        $user->verification_token = null;
-        $user->token_expires = null;
-        $user->verified = User::VERIFIED_USER;
-        $user->save();
+    //     // Mark user as verified
+    //     $user->verification_token = null;
+    //     $user->token_expires = null;
+    //     $user->verified = User::VERIFIED_USER;
+    //     $user->save();
 
-        return $this->showMessage('Email verified successfully', 200);
-    }
+    //     return $this->showMessage('Email verified successfully', 200);
+    // }
 
-    public function resendOtp(string $email) {
-
-
-        $user = User::where("email", $email)->first();
-
-        if (!$user) {
-            return $this->errorResponse("User not found", 404);
-        }
-
-        try {
-            retry(5, function () use ($user)
-            {
-                Mail::to($user->email)->send(new UserCreated($user));
-                Log::info("Mail resent successfully to: {$user->email}");
-            }, 100);
-        } catch (Exception $e) {
-            Log::error("Failed to resend mail to {$user->email}: " . $e->getMessage());
-        }
+    // public function resendOtp(string $email) {
 
 
+    //     $user = User::where("email", $email)->first();
 
-        return $this->showMessage("Please check your message again to claim a new verification code", 200);
+    //     if (!$user) {
+    //         return $this->errorResponse("User not found", 404);
+    //     }
+
+    //     try {
+    //         retry(5, function () use ($user)
+    //         {
+    //             Mail::to($user->email)->send(new UserCreated($user));
+    //             Log::info("Mail resent successfully to: {$user->email}");
+    //         }, 100);
+    //     } catch (Exception $e) {
+    //         Log::error("Failed to resend mail to {$user->email}: " . $e->getMessage());
+    //     }
 
 
 
-
-
-    }
+    //     return $this->showMessage("Please check your message again to claim a new verification code", 200);
+    // }
 }

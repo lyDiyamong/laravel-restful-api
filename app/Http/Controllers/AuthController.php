@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Laravel\Passport\Client as OClient;
-use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Route;
+use Monolog\Registry;
+use Illuminate\Http\Request;
 use App\Libraries\IssueToken;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Events\Registered;
+use Laravel\Passport\Client as OClient;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends ApiController
 {
@@ -46,7 +46,9 @@ class AuthController extends ApiController
         // $data['token_expires'] = Date::now()->addMinutes(10);
         $data['admin'] = User::REGULAR_USER;
 
-        User::create($data);
+        $user = User::create($data);
+        
+        event(new Registered($user));
 
         // For API authentication, we'll use Passport
         $res = IssueToken::scope('*')
@@ -125,7 +127,7 @@ class AuthController extends ApiController
 
         // Create response with new tokens
         $response = $this->successResponse([
-            'token' => $res->json
+            'data' => $res->json
         ]);
 
         // Set a new refresh token cookie if one is returned
@@ -144,8 +146,30 @@ class AuthController extends ApiController
         return $response;
     }
 
-    public function me()
+    public function logout(Request $req)
     {
-        
+        $token = $req->user()->token();
+
+        if (!$token) {
+            return $this->errorResponse("Token not found", 400);
+        }
+
+        DB::table('oauth_refresh_tokens')
+            ->where('access_token_id', $token->id)
+            ->update(['revoked' => true]);
+
+        $token->revoke();
+
+        return $this->successResponse([
+            'message' => 'Logged out successfully'
+        ]);
+    }
+
+    public function me(Request $req)
+    {
+        $user = $req->user();
+        return $this->successResponse([
+            'data' => $user
+        ]);
     }
 }

@@ -4,12 +4,13 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use App\Transformers\UserTransformer;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Faker\Core\Number;
 use Illuminate\Support\Str;
 use Laravel\Passport\HasApiTokens;
+use App\Transformers\UserTransformer;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
@@ -90,6 +91,6 @@ class User extends Authenticatable
 
     public static function generateVerificationCode()
     {
-        return Str::random(40);
+        return Str(rand(100000, 999999));
     }
 }
