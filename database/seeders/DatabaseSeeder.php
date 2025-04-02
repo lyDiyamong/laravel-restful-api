@@ -31,13 +31,9 @@ class DatabaseSeeder extends Seeder
         $categories = Category::factory()->count(20)->create();
         Transaction::factory()->count(20)->create();
 
-
         Product::flushEventListeners();
         Category::flushEventListeners();
         Transaction::flushEventListeners();
-
-
-
 
         $products->each(function ($product) use ($categories) {
             // Attach 1–3 random category to each user
