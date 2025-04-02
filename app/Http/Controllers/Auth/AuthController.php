@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
-use Monolog\Registry;
+
 use Illuminate\Http\Request;
 use App\Libraries\IssueToken;
 use App\Events\UserRegistered;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Auth\Events\Registered;
+use App\Http\Controllers\ApiController;
 use Laravel\Passport\Client as OClient;
 use Illuminate\Support\Facades\Validator;
 
@@ -61,7 +61,7 @@ class AuthController extends ApiController
         if (Auth::attempt($credentials)) {
             $res = IssueToken::scope('*')
                 ->usePasswordGrantType()
-                ->issueToken($request);
+                ->issueToken($credentials);
 
             if (!$res->success) {
                 return $this->errorResponse(
@@ -72,20 +72,16 @@ class AuthController extends ApiController
 
             // Creating a Laravel response object
             $response = $this->successResponse([
-                'data' => $res->json
+                'data' => [
+                    'access_token' => $res->access_token,
+                ],
+                "message" => "Login successfully"
             ]);
 
             // Add refresh token to HTTP-only cookie if it exists
-            if (isset($res->json['refresh_token'])) {
-                return $response->cookie(
-                    'refresh_token',
-                    $res->json['refresh_token'],
-                    60 * 24 * 30, // Expires in 30 days
-                    '/', // Path
-                    null, // Domain (null = default)
-                    false, // Secure (set to true in production with HTTPS)
-                    true // HTTP-only (prevents JavaScript access)
-                );
+            if (isset($res->refresh_token)) {
+                $cookie = $this->setRefreshCookie('refresh_token', $res->refresh_token);
+                return $response->withCookie($cookie);
             }
 
             return $response;
@@ -108,31 +104,27 @@ class AuthController extends ApiController
 
         $res = IssueToken::scope('*')
             ->useRefreshTokenGrantType()
-            ->issueToken($request);
+            ->issueToken();
 
         if (!$res->success) {
             return $this->errorResponse(
-                $res->json['message'] ?? 'The refresh token is invalid.',
+                'The refresh token is invalid.',
                 400
             );
         }
 
         // Create response with new tokens
         $response = $this->successResponse([
-            'data' => $res->json
+            'data' => [
+                'access_token' => $res->access_token,
+            ],
+            "message" => "Refresh token successfully"
         ]);
 
         // Set a new refresh token cookie if one is returned
-        if (isset($res->json['refresh_token'])) {
-            $response->cookie(
-                'refresh_token',
-                $res->json['refresh_token'],
-                60 * 24 * 30, // Expires in 30 days
-                '/', // Path
-                null, // Domain (null = default)
-                false, // Secure (set to true in production with HTTPS)
-                true // HTTP-only (prevents JavaScript access)
-            );
+        if (isset($res->refresh_token)) {
+            $cookie = $this->setRefreshCookie('refresh_token', $res->refresh_token);
+            return $response->withCookie($cookie);
         }
 
         return $response;

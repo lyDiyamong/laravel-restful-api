@@ -4,6 +4,7 @@ use App\Http\Middleware\Cors;
 use App\Http\Middleware\IsAdmin;
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\SignatureMiddleware;
+use App\Http\Middleware\JsonHeaderMiddleware;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\TransformInputMiddleware;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ValidatePostSize::class,
             TrimStrings::class,
             ConvertEmptyStringsToNull::class,
+            JsonHeaderMiddleware::class,
             Cors::class,
         ]);
         $middleware->api([

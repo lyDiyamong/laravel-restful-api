@@ -16,9 +16,7 @@ class IssueToken
     private $usernameValue = null;
     private static $instance = null;
 
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     public static function instance(): self
     {
@@ -70,7 +68,7 @@ class IssueToken
     private function defaultParam(): array
     {
         $oClient = OClient::where('password_client', 1)->first();
-        
+
         return [
             'grant_type' => $this->grantType,
             'client_id' => $oClient->id,
@@ -86,16 +84,19 @@ class IssueToken
         ];
     }
 
-    public function issueToken($req): object
+    public function issueToken(array $credentials = []): object
     {
+        $req = request();
         $defaultParam = $this->defaultParam();
 
+        // dd($credentials["password"]);
+
         // Only set username for password grant type
-        $params = match($this->grantType) {
-           'password' => [
+        $params = match ($this->grantType) {
+            'password' => [
                 ...$defaultParam,
-                'username' => $this->usernameValue ?? $req->{$this->username},
-                'password' => $req->password
+                'username' => $this->usernameValue ?? $credentials[$this->username],
+                'password' => $credentials['password']
             ],
             'refresh_token' => [
                 ...$defaultParam,
@@ -104,18 +105,22 @@ class IssueToken
             default => $defaultParam
         };
 
-        
+
         $req->request->add($params);
-        $req->headers->set('Accept', 'application/json');
-        $req->headers->set('Content-Type', 'application/json');
-        
+
         $tokenRequest = Request::create('/oauth/token', 'POST', $params);
         $res = Route::dispatch($tokenRequest);
+
+        dd($res);
+
+        $statusCode = $res->getStatusCode();
+        $responseJson = json_decode($res->getContent(), true);
 
         return (object)[
             'res' => $res,
             'statusCode' => $statusCode = $res->getStatusCode(),
-            'json' => json_decode($res->getContent(), true),
+            'access_token' => $responseJson['access_token'],
+            'refresh_token' => $responseJson['refresh_token'],
             'success' => $statusCode == '200',
         ];
     }
