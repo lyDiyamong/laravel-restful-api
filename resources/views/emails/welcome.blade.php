@@ -1,57 +1,148 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Our App</title>
+    <title>Welcome to {{ config('app.name') }}</title>
+    <style>
+        /* Base styles */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f7fafc;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #4a5568;
+            line-height: 1.5;
+        }
+        
+        /* Container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Header */
+        .email-header {
+            background-color: #4f46e5;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .email-logo {
+            max-width: 150px;
+            height: auto;
+        }
+        
+        /* Content */
+        .email-content {
+            padding: 30px;
+        }
+        
+        /* OTP Box */
+        .otp-box {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .otp-code {
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            color: #2d3748;
+            margin: 10px 0;
+        }
+        
+        /* Button */
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4f46e5;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        
+        /* Footer */
+        .email-footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #718096;
+            border-top: 1px solid #edf2f7;
+        }
+        
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-content {
+                padding: 20px;
+            }
+            
+            .otp-code {
+                font-size: 24px;
+                letter-spacing: 4px;
+            }
+        }
+    </style>
 </head>
-
-<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
-    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+<body>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
         <tr>
-            <td style="padding: 20px 0; text-align: center; background-color: #ffffff;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <td align="center" style="padding: 40px 20px;">
+                <!-- Email Container -->
+                <div class="email-container">
                     <!-- Header -->
-                    <div
-                        style="padding: 20px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                        <h1 style="color: #333333; font-size: 24px; margin-bottom: 20px;">Welcome, {{ $user->name }}!
-                            👋</h1>
-
-                        <p style="color: #666666; font-size: 16px; line-height: 1.5; margin-bottom: 25px;">
-                            Thank you for creating an account with us. To verify your email address, please use the
-                            following verification code:
-                        </p>
-
-                        <!-- OTP Box -->
-                        <div
-                            style="background-color: #f8f9fa; border: 2px dashed #e0e0e0; border-radius: 8px; padding: 20px; margin: 30px 0;">
-                            <h2 style="color: #2c3e50; font-size: 32px; letter-spacing: 8px; margin: 0;">
-                                {{ $otp }}</h2>
-                        </div>
-
-                        <p style="color: #666666; font-size: 14px; margin-top: 25px;">
-                            This verification code will expire in <strong>10 minutes</strong>.<br>
-                            If you didn't request this code, please ignore this email.
-                        </p>
-
-                        <!-- Divider -->
-                        <div style="border-top: 1px solid #e0e0e0; margin: 30px 0;"></div>
-
-                        <p style="color: #666666; font-size: 14px; margin-bottom: 0;">
-                            Best regards,<br>
-                            <strong style="color: #333333;">Your App Team</strong>
-                        </p>
+                    <div class="email-header">
+                        <img src="{{ asset('images/logo-white.png') }}" alt="{{ config('app.name') }}" class="email-logo">
+                        <h1 style="margin: 20px 0 0; font-size: 24px;">Welcome to {{ config('app.name') }}</h1>
                     </div>
-
+                    
+                    <!-- Content -->
+                    <div class="email-content">
+                        <h2 style="margin-top: 0;">Hi {{ $user->name }},</h2>
+                        
+                        <p>Thank you for joining {{ config('app.name') }}! We're excited to have you on board.</p>
+                        
+                        <p>To complete your registration and verify your email address, please use the following one-time verification code:</p>
+                        
+                        <!-- OTP Box -->
+                        <div class="otp-box">
+                            <p style="margin: 0 0 10px; font-size: 14px;">Your verification code:</p>
+                            <div class="otp-code">{{ $user->verification_token }}</div>
+                            <p style="margin: 10px 0 0; font-size: 14px;">Expires in 10 minutes</p>
+                        </div>
+                        
+                        <p>If you didn't request this code, you can safely ignore this email.</p>
+                        
+                        <p>Once verified, you'll have full access to your account and all our features.</p>
+                        
+                        <a href="{{ url('/login') }}" class="btn">Go to Login Page</a>
+                        
+                        {{-- <p>Need help? <a href="{{ url('/contact') }}" style="color: #4f46e5;">Contact our support team</a></p> --}}
+                    </div>
+                    
                     <!-- Footer -->
-                    <div style="margin-top: 20px; color: #999999; font-size: 12px;">
-                        <p>This is an automated message, please do not reply to this email.</p>
+                    <div class="email-footer">
+                        <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+                        {{-- <p>
+                            <a href="{{ url('/privacy') }}" style="color: #718096; text-decoration: none; margin: 0 10px;">Privacy Policy</a>
+                            <a href="{{ url('/terms') }}" style="color: #718096; text-decoration: none; margin: 0 10px;">Terms of Service</a>
+                        </p> --}}
+                        <p>This is an automated message - please do not reply directly to this email.</p>
                     </div>
                 </div>
             </td>
         </tr>
     </table>
 </body>
-
 </html>

@@ -37,9 +37,9 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::get('/refresh', [AuthController::class, 'refreshToken'])->name('refresh');
 
 
-Route::prefix('users')->group(function () {
-    Route::post('/verify', [UserController::class, 'verifyOtp']);
-    Route::get('/resend-otp/{email}', [UserController::class, 'resendOtp'])
+Route::prefix('auth')->group(function () {
+    Route::post('/verify', [AuthController::class, 'verifyOtp']);
+    Route::get('/resend-otp/{email}', [AuthController::class, 'resendOtp'])
         // 5 attempts per minute;
     ->middleware('throttle:5,1');
 });
