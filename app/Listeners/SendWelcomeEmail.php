@@ -2,12 +2,11 @@
 
 namespace App\Listeners;
 
-use App\Mail\WelcomeEmail;
 use App\Events\UserRegistered;
 use App\Jobs\SendWelcomeEmailJob;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\Queue\ShouldQueue;
-    
+
 class SendWelcomeEmail implements ShouldQueue
 {
     /**
@@ -24,7 +23,7 @@ class SendWelcomeEmail implements ShouldQueue
     public function handle(UserRegistered $event): void
     {
         //
-        SendWelcomeEmailJob::dispatch($event->user)->onQueue("auth");
-
+        Log::info("Sending welcome email to user {$event->user->email}");
+        SendWelcomeEmailJob::dispatch($event->user)->onQueue("auth")->delay(now()->addSeconds(10));
     }
 }

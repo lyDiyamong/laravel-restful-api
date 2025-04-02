@@ -2,8 +2,10 @@
 
 namespace App\Observers;
 
+use Exception;
 use App\Models\User;
-
+use App\Events\UserRegistered;
+use Illuminate\Support\Facades\Log;
 class UserObserver
 {
     /**
@@ -13,8 +15,9 @@ class UserObserver
     {
         //
         try {
-            Mail::to($user->email)->send(new UserCreated($user));
-            Log::info("Mail sent successfully to: {$user->email}");
+            // Fire an event to let the listener send a welcome email
+            Log::info("Firing event to send welcome email to {$user->email}");
+            event(new UserRegistered($user));
         } catch (Exception $e) {
             Log::error("Failed to send mail to {$user->email}: " . $e->getMessage());
         }

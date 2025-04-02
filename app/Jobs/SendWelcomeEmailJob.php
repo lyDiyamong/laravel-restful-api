@@ -5,7 +5,7 @@ namespace App\Jobs;
 use Throwable;
 use App\Models\User;
 use App\Mail\WelcomeEmail;
-
+use Illuminate\Support\Facades\Mail;
 
 class SendWelcomeEmailJob extends Job
 {

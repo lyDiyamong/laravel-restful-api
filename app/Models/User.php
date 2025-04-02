@@ -51,9 +51,9 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected $fillable = ['name', 'email', 'password', 
-    // 'verified', 'verification_token', 'admin'
-];
+    protected $fillable = ['name', 'email', 'password'];
+
+    protected $guarded = ['admin', 'verified', 'verification_token', "token_expires"];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -61,7 +61,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'password', 
+        'password',
         // 'verification_token', 
         'remember_token',
     ];
@@ -91,6 +91,6 @@ class User extends Authenticatable
 
     public static function generateVerificationCode()
     {
-        return Str(rand(100000, 999999));
+        return (string) random_int(100000, 999999);
     }
 }

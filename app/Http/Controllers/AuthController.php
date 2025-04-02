@@ -6,6 +6,7 @@ use App\Models\User;
 use Monolog\Registry;
 use Illuminate\Http\Request;
 use App\Libraries\IssueToken;
+use App\Events\UserRegistered;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Events\Registered;
@@ -25,7 +26,6 @@ class AuthController extends ApiController
 
     public function register(Request $request)
     {
-        //
         $rules = [
             'name' => 'required',
             'email' => 'required|email|unique:users',
@@ -38,69 +38,61 @@ class AuthController extends ApiController
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-        
-        $data = $request->all();
-        $data['password'] = bcrypt($request->password);
-        $data['verified'] = User::UNVERIFIED_USER;
-        // $data['verification_token'] = User::generateVerificationCode();
-        // $data['token_expires'] = Date::now()->addMinutes(10);
-        $data['admin'] = User::REGULAR_USER;
 
-        $user = User::create($data);
-        
-        event(new Registered($user));
-
-        // For API authentication, we'll use Passport
-        $res = IssueToken::scope('*')
-            ->usePasswordGrantType()
-            ->issueToken($request);
+        $user = new User();
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->password = bcrypt($request->password);
+        $user->verified = User::UNVERIFIED_USER;
+        $user->verification_token = User::generateVerificationCode();
+        $user->token_expires = now()->addMinutes(10);
+        $user->admin = User::REGULAR_USER;
+        $user->save();
 
         return $this->successResponse([
-            'token' => $res->json,
-            'message' => 'User registered successfully'
+            'message' => 'User registered successfully and please check your email for verification'
         ], 201);
-
-
     }
+
     public function login(Request $request)
-{
-    $credentials = $request->only('email', 'password');
+    {
+        $credentials = $request->only('email', 'password');
 
-    if (Auth::attempt($credentials)) {
-        $res = IssueToken::scope('*')
-            ->usePasswordGrantType()
-            ->issueToken($request);
+        if (Auth::attempt($credentials)) {
+            $res = IssueToken::scope('*')
+                ->usePasswordGrantType()
+                ->issueToken($request);
 
-        if (!$res->success) {
-            return $this->errorResponse(
-                $res->json['message'] ?? 'Authentication failed',
-                400
-            );
+            if (!$res->success) {
+                return $this->errorResponse(
+                    $res->json['message'] ?? 'Authentication failed',
+                    400
+                );
+            }
+
+            // Creating a Laravel response object
+            $response = $this->successResponse([
+                'data' => $res->json
+            ]);
+
+            // Add refresh token to HTTP-only cookie if it exists
+            if (isset($res->json['refresh_token'])) {
+                return $response->cookie(
+                    'refresh_token',
+                    $res->json['refresh_token'],
+                    60 * 24 * 30, // Expires in 30 days
+                    '/', // Path
+                    null, // Domain (null = default)
+                    false, // Secure (set to true in production with HTTPS)
+                    true // HTTP-only (prevents JavaScript access)
+                );
+            }
+
+            return $response;
         }
 
-        // Creating a Laravel response object
-        $response = $this->successResponse([
-            'data' => $res->json
-        ]);
-
-        // Add refresh token to HTTP-only cookie if it exists
-        if (isset($res->json['refresh_token'])) {
-            return $response->cookie(
-                'refresh_token', 
-                $res->json['refresh_token'], 
-                60 * 24 * 30, // Expires in 30 days
-                '/', // Path
-                null, // Domain (null = default)
-                false, // Secure (set to true in production with HTTPS)
-                true // HTTP-only (prevents JavaScript access)
-            );
-        }
-
-        return $response;
+        return $this->errorResponse("Incorrect password or email", 403);
     }
-
-    return $this->errorResponse("Incorrect password or email", 403);
-}
 
 
     public function refreshToken(Request $request)
@@ -133,8 +125,8 @@ class AuthController extends ApiController
         // Set a new refresh token cookie if one is returned
         if (isset($res->json['refresh_token'])) {
             $response->cookie(
-                'refresh_token', 
-                $res->json['refresh_token'], 
+                'refresh_token',
+                $res->json['refresh_token'],
                 60 * 24 * 30, // Expires in 30 days
                 '/', // Path
                 null, // Domain (null = default)
@@ -170,6 +162,36 @@ class AuthController extends ApiController
         $user = $req->user();
         return $this->successResponse([
             'data' => $user
+        ]);
+    }
+
+    public function verifyOtp(Request $request)
+    {
+        $user = User::where('email', $request->email)
+            ->where('verification_token', $request->verification_token)
+            ->where('token_expires', '>', now())
+            ->first();
+
+        if (!$user) {
+            return $this->errorResponse("User not found", 404);
+        }
+        $user->verified = User::VERIFIED_USER;
+        $user->verification_token = null;
+        $user->save();
+        return $this->successResponse([
+            'message' => 'User verified successfully'
+        ]);
+    }
+
+    public function resendOtp(Request $request)
+    {
+        $user = User::where('email', $request->email)->first();
+
+        $user->verification_token = User::generateVerificationCode();
+        $user->save();
+        event(new UserRegistered($user));
+        return $this->successResponse([
+            'message' => 'Otp sent successfully'
         ]);
     }
 }

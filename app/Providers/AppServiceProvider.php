@@ -8,11 +8,11 @@ use App\Models\Product;
 use App\Mail\UserCreated;
 use App\Exceptions\Handler;
 use Laravel\Passport\Passport;
+use App\Observers\UserObserver;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Debug\ExceptionHandler;
-
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -30,20 +30,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
-        Passport::ignoreRoutes();
-        Passport::loadKeysFrom(storage_path('oauth'));
-        Passport::tokensExpireIn(now()->addMinutes(15));
-        Passport::refreshTokensExpireIn(now()->addDays(7));
-        Passport::enablePasswordGrant();
 
-        Passport::tokensCan([
-            'read-user' => 'Read user profile',
-            'write-user' => 'Modify user profile',
-        ]);
-    
-        Passport::setDefaultScope([
-            'read-user'
-        ]);
+        User::observe(UserObserver::class);
 
 
         Product::updated(function (Product $product) {

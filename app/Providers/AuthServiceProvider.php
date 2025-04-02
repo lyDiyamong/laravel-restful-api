@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Laravel\Passport\Passport;
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -15,14 +15,19 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        // Load keys from a custom path if necessary
-        // Passport::loadKeysFrom(__DIR__.'/../secrets/oauth');
+        Passport::ignoreRoutes();
+        Passport::loadKeysFrom(storage_path('oauth'));
+        Passport::tokensExpireIn(now()->addMinutes(15));
+        Passport::refreshTokensExpireIn(now()->addDays(7));
+        Passport::enablePasswordGrant();
 
-        // Hash client secrets
-        Passport::hashClientSecrets();
-
-        // Set token expiration times
-        Passport::tokensExpireIn(now()->addHours(1));
-        Passport::refreshTokensExpireIn(now()->addDays(30));
+        Passport::tokensCan([
+            'read-user' => 'Read user profile',
+            'write-user' => 'Modify user profile',
+        ]);
+    
+        Passport::setDefaultScope([
+            'read-user'
+        ]);
     }
 }
