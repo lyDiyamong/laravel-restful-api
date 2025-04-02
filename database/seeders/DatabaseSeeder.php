@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
-use App\Models\Product;
-use App\Models\Transaction;
 use App\Models\User;
+use App\Models\Product;
+use App\Models\Category;
+use App\Models\Transaction;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -22,15 +22,21 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
         // DB::statement('SET FOREIGN_KEY_CHECKS = 0');
 
+        // Disable event listeners BEFORE creating models
+
+
+        User::flushEventListeners();
         User::factory()->count(10)->create();
         $products = Product::factory()->count(20)->create();
         $categories = Category::factory()->count(20)->create();
         Transaction::factory()->count(20)->create();
 
-        User::flushEventListeners();
+
         Product::flushEventListeners();
         Category::flushEventListeners();
         Transaction::flushEventListeners();
+
+
 
 
         $products->each(function ($product) use ($categories) {
@@ -38,6 +44,6 @@ class DatabaseSeeder extends Seeder
             $product->categories()->attach(
                 $categories->random(rand(1, 3))->pluck('category_id')->toArray()
             );
-        }); 
+        });
     }
 }

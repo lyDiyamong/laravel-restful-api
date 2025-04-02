@@ -18,6 +18,8 @@ return new class extends Migration
             $table->uuid("user_id")->primary();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('provider')->nullable();
+            $table->string('img_profile')->nullable();
             $table->string('password');
             $table->boolean('verified')->default(User::UNVERIFIED_USER);
             $table->string('verification_token')->nullable();
