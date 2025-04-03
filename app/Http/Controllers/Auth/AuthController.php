@@ -106,11 +106,31 @@ class AuthController extends ApiController
             ->useRefreshTokenGrantType()
             ->issueToken();
 
+        // Enhanced error handling
         if (!$res->success) {
-            return $this->errorResponse(
-                'The refresh token is invalid.',
-                400
-            );
+            $errorMessage = 'Failed to refresh token';
+
+            // Check if we have detailed error information
+            if (isset($res->error)) {
+                switch ($res->error) {
+                    case 'invalid_request':
+                        $errorMessage = 'Invalid refresh token request';
+                        break;
+                    case 'invalid_grant':
+                        $errorMessage = 'The refresh token is invalid or has been revoked';
+                        break;
+                    default:
+                        $errorMessage = $res->error_description ?? 'Unknown error occurred';
+                }
+            }
+
+            // For revoked tokens, you might want to clear the cookie
+            if (isset($res->error) && $res->error == 'invalid_grant') {
+                $response = $this->errorResponse($errorMessage, 401);
+                return $response->withCookie(cookie()->forget('refresh_token'));
+            }
+
+            return $this->errorResponse($errorMessage, 400);
         }
 
         // Create response with new tokens
@@ -133,6 +153,8 @@ class AuthController extends ApiController
     public function logout(Request $req)
     {
         $token = $req->user()->token();
+
+        // dd($token);
 
         if (!$token) {
             return $this->errorResponse("Token not found", 400);

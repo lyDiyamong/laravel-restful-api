@@ -5,7 +5,9 @@ namespace App\Libraries;
 use App\Traits\ApiResponder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Laravel\Passport\TokenRepository;
 use Laravel\Passport\Client as OClient;
+use Laravel\Passport\Bridge\RefreshTokenRepository;
 
 class IssueToken
 {
@@ -87,7 +89,7 @@ class IssueToken
     public function issueToken(array $credentials = []): object
     {
         $req = request();
-        $defaultParam = $this->defaultParam();;
+        $defaultParam = $this->defaultParam();
 
         // Only set username for password grant type
         $params = match ($this->grantType) {
@@ -103,7 +105,6 @@ class IssueToken
             default => $defaultParam
         };
 
-
         $req->request->add($params);
 
         $tokenRequest = Request::create('/oauth/token', 'POST', $params);
@@ -112,12 +113,37 @@ class IssueToken
         $statusCode = $res->getStatusCode();
         $responseJson = json_decode($res->getContent(), true);
 
+        // Check if the response contains error information
+        if (isset($responseJson['error'])) {
+            return (object)[
+                'res' => $res,
+                'statusCode' => $statusCode,
+                'error' => $responseJson['error'],
+                'error_description' => $responseJson['error_description'] ?? 'Unknown error',
+                'success' => false,
+            ];
+        }
+
+        // Create result object with safe access to response keys
         return (object)[
             'res' => $res,
-            'statusCode' => $statusCode = $res->getStatusCode(),
-            'access_token' => $responseJson['access_token'],
-            'refresh_token' => $responseJson['refresh_token'],
-            'success' => $statusCode == '200',
+            'statusCode' => $statusCode,
+            'access_token' => $responseJson['access_token'] ?? null,
+            'refresh_token' => $responseJson['refresh_token'] ?? null,
+            'success' => $statusCode == 200 && isset($responseJson['access_token']),
         ];
+    }
+
+    // Revoke token
+    public function revokeToken(string $tokenId): void
+    {
+        $tokenRepository = app(TokenRepository::class);
+        $refreshTokenRepository = app(RefreshTokenRepository::class);
+
+        // Revoke access token
+        $tokenRepository->revokeAccessToken($tokenId);
+
+        // Revoke refresh token
+        $refreshTokenRepository->revokeRefreshToken($tokenId);
     }
 }
