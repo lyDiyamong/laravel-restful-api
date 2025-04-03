@@ -6,206 +6,198 @@ use App\Models\User;
 
 use Illuminate\Http\Request;
 use App\Libraries\IssueToken;
+use App\Services\AuthService;
 use App\Events\UserRegistered;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ApiController;
 use Laravel\Passport\Client as OClient;
 use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends ApiController
 {
+    protected AuthService $authService;
 
     private $client;
 
-    public function __construct()
+    /**
+     * Create a new AuthController instance.
+     *
+     * @param AuthService $authService
+     */
+    public function __construct(AuthService $authService)
     {
+        $this->authService = $authService;
         $this->client = OClient::where("password_client", 1)->first();
     }
-    //
 
-    public function register(Request $request)
+    /**
+     * Register a new user
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function register(Request $request): JsonResponse
     {
-        $rules = [
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:8',
-            'confirm_password' => 'required|same:password',
-        ];
+        $result = $this->authService->register($request->all());
 
-        $validator = Validator::make($request->all(), $rules);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        if (!$result['success']) {
+            return $this->errorResponse(
+                $result['errors'] ?? $result['message'],
+                $result['status']
+            );
         }
-
-        $user = new User();
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->password = bcrypt($request->password);
-        $user->verified = User::UNVERIFIED_USER;
-        $user->verification_token = User::generateVerificationCode();
-        $user->token_expires = now()->addMinutes(10);
-        $user->admin = User::REGULAR_USER;
-        $user->save();
 
         return $this->successResponse([
-            'message' => 'User registered successfully and please check your email for verification'
-        ], 201);
+            'message' => $result['message']
+        ], $result['status']);
     }
 
-    public function login(Request $request)
+    /**
+     * Authenticate user and get token
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function login(Request $request): JsonResponse
     {
-        $credentials = $request->only('email', 'password');
+        $result = $this->authService->login($request->only('email', 'password'));
 
-        if (Auth::attempt($credentials)) {
-            $res = IssueToken::scope('*')
-                ->usePasswordGrantType()
-                ->issueToken($credentials);
-
-            if (!$res->success) {
-                return $this->errorResponse(
-                    $res->json['message'] ?? 'Authentication failed',
-                    400
-                );
-            }
-
-            // Creating a Laravel response object
-            $response = $this->successResponse([
-                'data' => [
-                    'access_token' => $res->access_token,
-                ],
-                "message" => "Login successfully"
-            ]);
-
-            // Add refresh token to HTTP-only cookie if it exists
-            if (isset($res->refresh_token)) {
-                $cookie = $this->setRefreshCookie('refresh_token', $res->refresh_token);
-                return $response->withCookie($cookie);
-            }
-
-            return $response;
+        if (!$result['success']) {
+            return $this->errorResponse($result['message'], $result['status']);
         }
 
-        return $this->errorResponse("Incorrect password or email", 403);
-    }
-
-
-    public function refreshToken(Request $request)
-    {
-        $refreshToken = $request->cookie('refresh_token');
-
-        if (!$refreshToken) {
-            return $this->errorResponse("Refresh token not found", 400);
-        }
-
-        // Create a modified request with the refresh token
-        $request->merge(['refresh_token' => $refreshToken]);
-
-        $res = IssueToken::scope('*')
-            ->useRefreshTokenGrantType()
-            ->issueToken();
-
-        // Enhanced error handling
-        if (!$res->success) {
-            $errorMessage = 'Failed to refresh token';
-
-            // Check if we have detailed error information
-            if (isset($res->error)) {
-                switch ($res->error) {
-                    case 'invalid_request':
-                        $errorMessage = 'Invalid refresh token request';
-                        break;
-                    case 'invalid_grant':
-                        $errorMessage = 'The refresh token is invalid or has been revoked';
-                        break;
-                    default:
-                        $errorMessage = $res->error_description ?? 'Unknown error occurred';
-                }
-            }
-
-            // For revoked tokens, you might want to clear the cookie
-            if (isset($res->error) && $res->error == 'invalid_grant') {
-                $response = $this->errorResponse($errorMessage, 401);
-                return $response->withCookie(cookie()->forget('refresh_token'));
-            }
-
-            return $this->errorResponse($errorMessage, 400);
-        }
-
-        // Create response with new tokens
         $response = $this->successResponse([
-            'data' => [
-                'access_token' => $res->access_token,
-            ],
-            "message" => "Refresh token successfully"
+            'data' => ['access_token' => $result['data']['access_token']],
+            'message' => $result['message']
         ]);
 
-        // Set a new refresh token cookie if one is returned
-        if (isset($res->refresh_token)) {
-            $cookie = $this->setRefreshCookie('refresh_token', $res->refresh_token);
-            return $response->withCookie($cookie);
+        if (isset($result['data']['refresh_token'])) {
+            $response->withCookie($this->setRefreshCookie('refresh_token', $result['data']['refresh_token']));
         }
 
         return $response;
     }
 
-    public function logout(Request $req)
+    /**
+     * Refresh access token
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function refreshToken(Request $request): JsonResponse
     {
-        $token = $req->user()->token();
+        $result = $this->authService->refreshToken($request->cookie('refresh_token'));
 
-        // dd($token);
+        if (!$result['success']) {
+            $response = $this->errorResponse($result['message'], $result['status']);
 
-        if (!$token) {
-            return $this->errorResponse("Token not found", 400);
+            if ($result['should_clear_cookie'] ?? false) {
+                $response->withCookie(cookie()->forget('refresh_token'));
+            }
+
+            return $response;
         }
 
-        DB::table('oauth_refresh_tokens')
-            ->where('access_token_id', $token->id)
-            ->update(['revoked' => true]);
-
-        $token->revoke();
-
-        return $this->successResponse([
-            'message' => 'Logged out successfully'
+        $response = $this->successResponse([
+            'data' => ['access_token' => $result['data']['access_token']],
+            'message' => $result['message']
         ]);
-    }
 
-    public function me(Request $req)
-    {
-        $user = $req->user();
-        return $this->successResponse([
-            'data' => $user
-        ]);
-    }
-
-    public function verifyOtp(Request $request)
-    {
-        $user = User::where('email', $request->email)
-            ->where('verification_token', $request->verification_token)
-            ->where('token_expires', '>', now())
-            ->first();
-
-        if (!$user) {
-            return $this->errorResponse("User not found", 404);
+        if (isset($result['data']['refresh_token'])) {
+            $response->withCookie($this->setRefreshCookie('refresh_token', $result['data']['refresh_token']));
         }
-        $user->verified = User::VERIFIED_USER;
-        $user->verification_token = null;
-        $user->save();
-        return $this->successResponse([
-            'message' => 'User verified successfully'
-        ]);
+
+        return $response;
     }
 
-    public function resendOtp(Request $request)
+    /**
+     * Logout user
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function logout(Request $request): JsonResponse
     {
-        $user = User::where('email', $request->email)->first();
+        $result = $this->authService->logout($request->user());
 
-        $user->verification_token = User::generateVerificationCode();
-        $user->save();
-        event(new UserRegistered($user));
-        return $this->successResponse([
-            'message' => 'Otp sent successfully'
-        ]);
+        if (!$result['success']) {
+            return $this->errorResponse($result['message'], $result['status']);
+        }
+
+        return $this->successResponse(['message' => $result['message']]);
+    }
+
+    /**
+     * Get authenticated user profile
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function me(Request $request): JsonResponse
+    {
+        $result = $this->authService->getProfile($request->user());
+        return $this->successResponse(['data' => $result['data']]);
+    }
+
+    /**
+     * Verify user's email with OTP
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function verifyOtp(Request $request): JsonResponse
+    {
+        $result = $this->authService->verifyOtp(
+            $request->email,
+            $request->verification_token
+        );
+
+        if (!$result['success']) {
+            return $this->errorResponse($result['message'], $result['status']);
+        }
+
+        return $this->successResponse(['message' => $result['message']]);
+    }
+
+    /**
+     * Resend OTP to user's email
+     *
+     * @param string $email
+     * @return JsonResponse
+     */
+    public function resendOtp(string $email): JsonResponse
+    {
+        $result = $this->authService->resendOtp($email);
+
+        if (!$result['success']) {
+            return $this->errorResponse($result['message'], $result['status']);
+        }
+
+        return $this->successResponse(['message' => $result['message']]);
+    }
+
+    /**
+     * Create a refresh token cookie
+     *
+     * @param string $name
+     * @param string $value
+     * @return Cookie
+     */
+    protected function setRefreshCookie(string $name, string $value): Cookie
+    {
+        return cookie(
+            $name,
+            $value,
+            60 * 24 * 30, // 30 days
+            null,
+            null,
+            config('app.env') === 'production',
+            true, // httpOnly
+            false,
+            'Strict'
+        );
     }
 }
