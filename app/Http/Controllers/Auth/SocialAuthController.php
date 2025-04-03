@@ -28,20 +28,22 @@ class SocialAuthController extends ApiController
                 'password' => bcrypt($socialUser->getId()),
                 "img_profile" => $socialUser->getAvatar(),
                 "provider" => $provider,
-                "verified"=> true
+                "verified" => true
             ]);
+
+            $credentials = [
+                "email" => $user->email,
+                "password" => "{$socialUser->getId()}"
+            ];
 
             // Generate a token for the user
             $token = IssueToken::usePasswordGrantType()
-                ->issueToken([
-                    "email" => $user->email,
-                    "password" => $socialUser->getId()
-                ]);
+                ->issueToken($credentials);
             // dd($token);
 
-            
 
-            if (!$token || isset($token['refresh_token'])) {
+
+            if (!$token || !isset($token->refresh_token)) {
                 return $this->errorResponse('No token', 401);
             }
 

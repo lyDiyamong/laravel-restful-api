@@ -87,9 +87,7 @@ class IssueToken
     public function issueToken(array $credentials = []): object
     {
         $req = request();
-        $defaultParam = $this->defaultParam();
-
-        // dd($credentials["password"]);
+        $defaultParam = $this->defaultParam();;
 
         // Only set username for password grant type
         $params = match ($this->grantType) {
@@ -110,8 +108,6 @@ class IssueToken
 
         $tokenRequest = Request::create('/oauth/token', 'POST', $params);
         $res = Route::dispatch($tokenRequest);
-
-        dd($res);
 
         $statusCode = $res->getStatusCode();
         $responseJson = json_decode($res->getContent(), true);
