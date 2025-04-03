@@ -3,13 +3,11 @@
 namespace App\Services;
 
 use App\Models\User;
-use Illuminate\Http\Request;
 use App\Libraries\IssueToken;
 use App\Events\UserRegistered;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthService
 {

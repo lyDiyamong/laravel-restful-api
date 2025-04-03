@@ -2,18 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\User;
-
 use Illuminate\Http\Request;
-use App\Libraries\IssueToken;
 use App\Services\AuthService;
-use App\Events\UserRegistered;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ApiController;
 use Laravel\Passport\Client as OClient;
-use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends ApiController
